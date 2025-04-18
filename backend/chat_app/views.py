@@ -13,18 +13,23 @@ class GetMessagesListAPIView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
 
-        #fetch all unique users the current user has chatted with
-        message_partners = User.objects.filter(
-            Q(sender__receiver=user) | Q(receiver__sender=user)
-        ).distinct()
+        # Fetch all unique users the current user has chatted with
+        message_partners = ChatMessage.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).values_list('sender', 'receiver').distinct()
 
-        #collect chat messages between current user and each partner
+        # Get distinct users from the messages
+        message_partners = set([pair[0] for pair in message_partners] + [pair[1] for pair in message_partners])
+        message_partners.discard(user.id)  # Remove the current user from the list of partners
+        
+        # Collect chat messages between current user and each partner
         all_messages = ChatMessage.objects.filter(
             Q(sender=user, receiver__in=message_partners) |
             Q(sender__in=message_partners, receiver=user)
         ).order_by('date')
 
         return all_messages
+
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -54,25 +59,30 @@ class ReadMessagesUpdateAPIView(generics.UpdateAPIView):
         if updated_count:
             return Response({'message': 'Messages marked as read'})
         return Response({'message': 'No unread messages found'})
-
-
-class SearchUser(generics.ListAPIView):
-    serializer_class = ProfileSerializer
+    
+class SearchUserAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        username = self.kwargs['username']
-        return User.objects.filter(
-            Q(username__icontains=username) |
-            Q(first_name__icontains=username) |
-            Q(last_name__icontains=username) |
-            Q(email__icontains=username)
-        )
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("user", "")  # Use "user" as the query parameter
+        
+        if query:
+            # Adjust query to search in User model based on the query parameter
+            users = User.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query)
+            ).exclude(id=request.user.id)
+        else:
+            users = User.objects.none()
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        if not queryset.exists():
-            return Response({'detail': 'Users not found'}, status=status.HTTP_404_NOT_FOUND)
+        results = [{
+            "id": user.id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "profile_picture": user.profile_picture.url if user.profile_picture else ""
+        } for user in users]
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        print(f"result is : {results}")
+        return Response(results)

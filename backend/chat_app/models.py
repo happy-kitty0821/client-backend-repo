@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from auth_app.models import *
+
 
 class ChatMessage(models.Model):
     sender = models.ForeignKey(
