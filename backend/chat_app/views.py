@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import User, ChatMessage
 from .serializers import MessageSerializer, ProfileSerializer
+from rest_framework.exceptions import PermissionDenied
+
 
 class GetMessagesListAPIView(generics.ListAPIView):
     serializer_class = MessageSerializer
@@ -40,6 +42,13 @@ class SendMessageCreateAPIView(generics.CreateAPIView):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        sender_from_request = self.request.data.get('sender')
+
+        if sender_from_request is not None and int(sender_from_request) != self.request.user.id:
+            raise PermissionDenied("Sender ID does not match the authenticated user.")
+
+        serializer.save(sender=self.request.user)
 
 class ReadMessagesUpdateAPIView(generics.UpdateAPIView):
     serializer_class = MessageSerializer
