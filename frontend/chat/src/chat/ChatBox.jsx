@@ -6,11 +6,13 @@ const ChatBox = ({ selectedUser }) => {
   const [message, setMessage] = useState('');
   const chatEndRef = useRef(null);
 
-  const userData = JSON.parse(localStorage.getItem('user'));
-  const currentUserId = parseInt(userData?.id);
+  // const userData = JSON.parse(localStorage.getItem('user'));
+  // const currentUserId = parseInt(userData?.id);
+  const currentUserId = localStorage.getItem('userId');
 
   const fetchMessages = async () => {
-    const token = userData?.access;
+    // const token = userData?.access;
+    const token = localStorage.getItem('accessToken');
 
     try {
       const res = await axios.get('http://localhost:8000/chat/api/get-messages/', {
@@ -34,7 +36,8 @@ const ChatBox = ({ selectedUser }) => {
   const sendMessage = async () => {
     if (!message.trim()) return;
 
-    const token = userData?.access;
+    // const token = userData?.access;
+    const token = localStorage.getItem('accessToken');
 
     try {
       await axios.post(

@@ -10,10 +10,10 @@ const ChatList = ({ onUserSelect }) => {
 
   const searchUser = async () => {
     if (!searchText) return;
-    const userData = JSON.parse(localStorage.getItem('user'));
+    // const userData = JSON.parse(localStorage.getItem('user'));
 
     // Extract the access token
-    const token = userData?.access;
+    const token = localStorage.getItem('accessToken');
 
     try {
       // Sending query as a query parameter
@@ -29,9 +29,10 @@ const ChatList = ({ onUserSelect }) => {
   };
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('user'));
-    const currentUserId = parseInt(userData?.id);
-    const token = userData?.access;
+    // const userData = JSON.parse(localStorage.getItem('user'));
+    const currentUserId = localStorage.getItem('userId');
+    // const token = userData?.access;
+    const token = localStorage.getItem('accessToken');
 
     setLoading(true);
     setError(null); // Reset the error message before trying to fetch
